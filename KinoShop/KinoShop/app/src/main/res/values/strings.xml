@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">KinoShop</string>
+    <string name="title_movies">Movies</string>
+    <string name="title_favorites">Favorites</string>
+    <string name="title_profile">Profile</string>
+    <string name="download_image_url">https://image.tmdb.org/t/p/w500</string>
+    <string name="overview">Overview:</string>
+    <string name="genre">Genre:</string>
+    <string name="actor_cast">Actor cast:</string>
+    <string name="check_network_connection">Check network connection</string>
+</resources>

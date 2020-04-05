@@ -1,0 +1,10 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="size_image_movies">150dp</dimen>
+    <dimen name="collapsing_toolbar_height">260dp</dimen>
+    <dimen name="collapsing_toolbar_title_margin_bottom">54dp</dimen>
+    <dimen name="collapsing_toolbar_title_margin_start">22dp</dimen>
+    <dimen name="collapsing_toolbar_overlap">36dp</dimen>
+</resources>
