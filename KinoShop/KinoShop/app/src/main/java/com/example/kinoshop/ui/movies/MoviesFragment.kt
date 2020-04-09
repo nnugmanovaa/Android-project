@@ -7,9 +7,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
+import com.example.kinoshop.MainActivity
 import com.example.kinoshop.R
-import com.example.kinoshop.api.Api
-import com.example.kinoshop.api.ApiService
 import com.example.kinoshop.model.Movies
 import kotlinx.android.synthetic.main.fragment_movies.*
 import retrofit2.Call
@@ -19,7 +18,7 @@ import retrofit2.Response
 class MoviesFragment : Fragment() {
 
     private lateinit var moviesAdapter: MoviesAdapter
-    private lateinit var apiService: ApiService
+    private lateinit var mainActivity: MainActivity
     private var page = 1
     private var totalPages = 0
 
@@ -30,9 +29,8 @@ class MoviesFragment : Fragment() {
     ): View? = inflater.inflate(R.layout.fragment_movies, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        mainActivity = activity as MainActivity
         super.onViewCreated(view, savedInstanceState)
-        val api = Api()
-        apiService = api.serviceInitialize()
         initMoviesFeed()
         getMovies()
         swipeRefresh.setOnRefreshListener {
@@ -41,7 +39,7 @@ class MoviesFragment : Fragment() {
     }
 
     private fun getMovies() {
-        apiService.getMovies(page).enqueue(object : Callback<Movies> {
+        mainActivity.apiService.getMovies(page).enqueue(object : Callback<Movies> {
             override fun onFailure(call: Call<Movies>, t: Throwable) {
                 showToastCheckNetwork()
             }
@@ -72,8 +70,9 @@ class MoviesFragment : Fragment() {
     }
 
     private fun loadNewMovies() {
-        if (page != totalPages)
-            apiService.getMovies(page).enqueue(object : Callback<Movies> {
+        if (page != totalPages) {
+            moviesAdapter.needShowLoading()
+            mainActivity.apiService.getMovies(page++).enqueue(object : Callback<Movies> {
                 override fun onFailure(call: Call<Movies>, t: Throwable) {
                     showToastCheckNetwork()
                     swipeRefresh.isRefreshing = false
@@ -84,9 +83,11 @@ class MoviesFragment : Fragment() {
                         insertMoviesList(it)
                     }
                     swipeRefresh.isRefreshing = false
-                    page++
                 }
             })
+        } else {
+            swipeRefresh.isRefreshing = false
+        }
     }
 
     private fun initMoviesFeed() {
