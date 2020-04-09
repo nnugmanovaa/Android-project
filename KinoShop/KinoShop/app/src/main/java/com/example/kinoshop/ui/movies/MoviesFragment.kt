@@ -33,8 +33,10 @@ class MoviesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initMoviesFeed()
         getMovies()
-        swipeRefresh.setOnRefreshListener {
-            loadNewMovies()
+        swipeRefresh?.let {
+            it.setOnRefreshListener {
+                loadNewMovies()
+            }
         }
     }
 
@@ -54,11 +56,14 @@ class MoviesFragment : Fragment() {
     }
 
     private fun showToastCheckNetwork() {
-        Toast.makeText(
-            context,
-            getString(R.string.check_network_connection),
-            Toast.LENGTH_SHORT
-        ).show()
+        context?.let {
+            Toast.makeText(
+                it,
+                getString(R.string.check_network_connection),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
     }
 
     private fun setMoviesList(movies: Movies) {
@@ -75,18 +80,24 @@ class MoviesFragment : Fragment() {
             mainActivity.apiService.getMovies(page++).enqueue(object : Callback<Movies> {
                 override fun onFailure(call: Call<Movies>, t: Throwable) {
                     showToastCheckNetwork()
-                    swipeRefresh.isRefreshing = false
+                    swipeRefresh?.let {
+                        it.isRefreshing = false
+                    }
                 }
 
                 override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
                     response.body()?.let {
                         insertMoviesList(it)
                     }
-                    swipeRefresh.isRefreshing = false
+                    swipeRefresh?.let {
+                        it.isRefreshing = false
+                    }
                 }
             })
         } else {
-            swipeRefresh.isRefreshing = false
+            swipeRefresh?.let {
+                it.isRefreshing = false
+            }
         }
     }
 
@@ -99,7 +110,11 @@ class MoviesFragment : Fragment() {
     private fun addClickListener() {
         moviesAdapter.addOnClickMovie {
             val action =
-                MoviesFragmentDirections.actionClickToMovie(moviesAdapter.getMovieIdByPosition(it.adapterPosition))
+                MoviesFragmentDirections.actionClickToMovie(
+                    moviesAdapter.getMovieIdByPosition(
+                        it.adapterPosition
+                    )
+                )
             view?.findNavController()?.navigate(action)
         }
     }

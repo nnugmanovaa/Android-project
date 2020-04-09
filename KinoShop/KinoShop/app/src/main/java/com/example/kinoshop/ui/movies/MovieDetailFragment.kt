@@ -49,7 +49,9 @@ class MovieDetailFragment : Fragment() {
 
             override fun onResponse(call: Call<MovieDetail>, response: Response<MovieDetail>) {
                 val movie = response.body()
-                collapsingToolbar.title = movie?.title
+                collapsingToolbar?.let {
+                    it.title = movie?.title
+                }
                 context?.let {
                     Glide.with(it)
                         .load("${getString(R.string.download_image_url)}${movie?.posterPath}")
@@ -57,12 +59,17 @@ class MovieDetailFragment : Fragment() {
                         .centerCrop()
                         .into(posterImage)
                 }
-
-                overviewContent.text = movie?.overview
+                overviewContent?.let {
+                    it.text = movie?.overview
+                }
                 val genres = movie?.genres?.map { it.name }
-                genreContent.text = genres?.joinToString(", ")
+                genreContent?.let {
+                    it.text = genres?.joinToString(", ")
+                }
                 val countries = movie?.productionCountries?.map { it.name }
-                countriesContent.text = countries?.joinToString(", ")
+                countriesContent?.let {
+                    it.text = countries?.joinToString(", ")
+                }
             }
         })
         mainActivity.apiService.getActorCastByMovie(movieId).enqueue(object : Callback<ActorCast> {
@@ -73,49 +80,60 @@ class MovieDetailFragment : Fragment() {
             override fun onResponse(call: Call<ActorCast>, response: Response<ActorCast>) {
                 val actorCast = response.body()
                 val actors = actorCast?.cast?.map { it.name }
-                actorCastContent.text = actors?.joinToString(", ")
-            }
-        })
-    }
-
-    private fun markFavoriteMedia() {
-        mainActivity.apiService.markFavoriteMovie(
-            accountId = mainActivity.account?.id!!,
-            sessionId = mainActivity.sessionId,
-            mediaType = "movie",
-            mediaId = movieId,
-            favorite = true
-        ).enqueue(object : Callback<ResponseStatus> {
-            override fun onFailure(call: Call<ResponseStatus>, t: Throwable) {
-                showToastCheckNetwork()
-            }
-
-            override fun onResponse(
-                call: Call<ResponseStatus>,
-                response: Response<ResponseStatus>
-            ) {
-                if (response.body() != null) {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.movie_added_favorite),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.check_auth_data),
-                        Toast.LENGTH_SHORT
-                    ).show()
+                actorCastContent?.let {
+                    it.text = actors?.joinToString(", ")
                 }
             }
         })
     }
 
+    private fun markFavoriteMedia() {
+        mainActivity.account?.id?.let {
+            mainActivity.apiService.markFavoriteMovie(
+                accountId = it,
+                sessionId = mainActivity.sessionId,
+                mediaType = "movie",
+                mediaId = movieId,
+                favorite = true
+            ).enqueue(object : Callback<ResponseStatus> {
+                override fun onFailure(call: Call<ResponseStatus>, t: Throwable) {
+                    showToastCheckNetwork()
+                }
+
+                override fun onResponse(
+                    call: Call<ResponseStatus>,
+                    response: Response<ResponseStatus>
+                ) {
+                    if (response.body() != null) {
+                        context?.let {
+                            Toast.makeText(
+                                it,
+                                getString(R.string.movie_added_favorite),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                    } else {
+                        context?.let {
+                            Toast.makeText(
+                                it,
+                                getString(R.string.check_auth_data),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            })
+        }
+    }
+
     private fun showToastCheckNetwork() {
-        Toast.makeText(
-            context,
-            getString(R.string.check_network_connection),
-            Toast.LENGTH_SHORT
-        ).show()
+        context?.let {
+            Toast.makeText(
+                it,
+                getString(R.string.check_network_connection),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }

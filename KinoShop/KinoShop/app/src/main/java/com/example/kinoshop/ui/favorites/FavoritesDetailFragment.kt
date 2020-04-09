@@ -58,11 +58,17 @@ class FavoritesDetailFragment : Fragment() {
                         .into(posterImage)
                 }
 
-                overviewContent.text = movie?.overview
+                overviewContent?.let {
+                    it.text = movie?.overview
+                }
                 val genres = movie?.genres?.map { it.name }
-                genreContent.text = genres?.joinToString(", ")
+                genreContent?.let {
+                    it.text = genres?.joinToString(", ")
+                }
                 val countries = movie?.productionCountries?.map { it.name }
-                countriesContent.text = countries?.joinToString(", ")
+                countriesContent?.let {
+                    it.text = countries?.joinToString(", ")
+                }
             }
         })
         mainActivity.apiService.getActorCastByMovie(movieId).enqueue(object : Callback<ActorCast> {
@@ -73,7 +79,9 @@ class FavoritesDetailFragment : Fragment() {
             override fun onResponse(call: Call<ActorCast>, response: Response<ActorCast>) {
                 val actorCast = response.body()
                 val actors = actorCast?.cast?.map { it.name }
-                actorCastContent.text = actors?.joinToString(", ")
+                actorCastContent?.let {
+                    it.text = actors?.joinToString(", ")
+                }
             }
         })
     }
@@ -86,41 +94,50 @@ class FavoritesDetailFragment : Fragment() {
             false
         )
 
-        mainActivity.apiService.deleteFavoriteMovie(
-            accountId = mainActivity.account?.id!!,
-            sessionId = mainActivity.sessionId,
-            bodyFavorite = bodyFavorite
-        ).enqueue(object : Callback<ResponseStatus> {
-            override fun onFailure(call: Call<ResponseStatus>, t: Throwable) {
-                showToastCheckNetwork()
-            }
-
-            override fun onResponse(
-                call: Call<ResponseStatus>,
-                response: Response<ResponseStatus>
-            ) {
-                if (response.body() != null) {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.movie_remove_favorite),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.check_auth_data),
-                        Toast.LENGTH_SHORT
-                    ).show()
+        mainActivity.account?.id?.let {
+            mainActivity.apiService.deleteFavoriteMovie(
+                accountId = it,
+                sessionId = mainActivity.sessionId,
+                bodyFavorite = bodyFavorite
+            ).enqueue(object : Callback<ResponseStatus> {
+                override fun onFailure(call: Call<ResponseStatus>, t: Throwable) {
+                    showToastCheckNetwork()
                 }
-            }
-        })
+
+                override fun onResponse(
+                    call: Call<ResponseStatus>,
+                    response: Response<ResponseStatus>
+                ) {
+                    if (response.body() != null) {
+                        context?.let {
+                            Toast.makeText(
+                                it,
+                                getString(R.string.movie_remove_favorite),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                    } else {
+                        context?.let {
+                            Toast.makeText(
+                                it,
+                                getString(R.string.check_auth_data),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                }
+            })
+        }
     }
 
     private fun showToastCheckNetwork() {
-        Toast.makeText(
-            context,
-            getString(R.string.check_network_connection),
-            Toast.LENGTH_SHORT
-        ).show()
+        context?.let {
+            Toast.makeText(
+                it,
+                getString(R.string.check_network_connection),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }

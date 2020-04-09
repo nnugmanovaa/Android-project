@@ -64,8 +64,7 @@ class ProfileFragment : Fragment() {
             .enqueue(object :
                 Callback<AuthResponse> {
                 override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                    loginTIL.showError(R.string.check_auth_data)
-                    passwordTIL.showError(R.string.check_auth_data)
+                    showError()
                     hideProgressBar()
                 }
 
@@ -74,16 +73,14 @@ class ProfileFragment : Fragment() {
                     response: Response<AuthResponse>
                 ) {
                     if (response.body() == null) {
-                        loginTIL.showError(R.string.check_auth_data)
-                        passwordTIL.showError(R.string.check_auth_data)
+                        showError()
                     }
                     val requestResponse = response.body()
                     requestResponse?.let {
                         if (it.success) {
                             createSession(reqToken)
                         } else {
-                            loginTIL.showError(R.string.check_auth_data)
-                            passwordTIL.showError(R.string.check_auth_data)
+                            showError()
                         }
                     }
                     hideProgressBar()
@@ -94,8 +91,7 @@ class ProfileFragment : Fragment() {
     private fun createSession(reqToken: String) {
         mainActivity.apiService.createSession(reqToken).enqueue(object : Callback<SessionToken> {
             override fun onFailure(call: Call<SessionToken>, t: Throwable) {
-                loginTIL.showError(R.string.check_auth_data)
-                passwordTIL.showError(R.string.check_auth_data)
+                showError()
                 hideProgressBar()
             }
 
@@ -111,8 +107,7 @@ class ProfileFragment : Fragment() {
     private fun getAccount(sessionId: String) {
         mainActivity.apiService.getAccount(sessionId).enqueue(object : Callback<Account> {
             override fun onFailure(call: Call<Account>, t: Throwable) {
-                loginTIL.showError(R.string.check_auth_data)
-                passwordTIL.showError(R.string.check_auth_data)
+                showError()
                 hideProgressBar()
             }
 
@@ -124,9 +119,11 @@ class ProfileFragment : Fragment() {
                         name = account.name
                     )
                     mainActivity.isSignIn = true
-                    userName.text = account.name
-                    signInFrame.visibility = View.GONE
-                    accountFrame.visibility = View.VISIBLE
+                    userName?.let {
+                        it.text = account.name
+                    }
+                    signInFrame?.let { it.visibility = View.GONE }
+                    accountFrame?.let { it.visibility = View.VISIBLE }
                 }
                 hideProgressBar()
             }
@@ -134,7 +131,17 @@ class ProfileFragment : Fragment() {
     }
 
     private fun hideProgressBar() {
-        progressBar.visibility = View.INVISIBLE
+        progressBar?.let {
+            it.visibility = View.INVISIBLE
+        }
     }
 
+    private fun showError() {
+        loginTIL?.let {
+            it.showError(R.string.check_auth_data)
+        }
+        passwordTIL?.let {
+            it.showError(R.string.check_auth_data)
+        }
+    }
 }

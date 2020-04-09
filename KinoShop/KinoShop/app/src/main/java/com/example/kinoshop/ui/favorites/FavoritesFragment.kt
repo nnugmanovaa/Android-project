@@ -35,7 +35,7 @@ class FavoritesFragment : Fragment() {
         if (mainActivity.isSignIn) {
             initMoviesFeed()
             getFavorite()
-            swipeRefresh.setOnRefreshListener {
+            swipeRefresh?.let {
                 loadNewFavoriteMovies()
             }
         } else {
@@ -44,29 +44,33 @@ class FavoritesFragment : Fragment() {
     }
 
     private fun getFavorite() {
-        mainActivity.apiService.getFavoriteMovieByAccountId(
-            mainActivity.account?.id!!, mainActivity.sessionId,
-            page
-        ).enqueue(object : Callback<Movies> {
-            override fun onFailure(call: Call<Movies>, t: Throwable) {
-                showToastCheckNetwork()
-            }
-
-            override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
-                response.body()?.let {
-                    totalPages = it.totalPages
-                    setMoviesList(it)
+        mainActivity.account?.id?.let {
+            mainActivity.apiService.getFavoriteMovieByAccountId(
+                it, mainActivity.sessionId,
+                page
+            ).enqueue(object : Callback<Movies> {
+                override fun onFailure(call: Call<Movies>, t: Throwable) {
+                    showToastCheckNetwork()
                 }
-            }
-        })
+
+                override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
+                    response.body()?.let {
+                        totalPages = it.totalPages
+                        setMoviesList(it)
+                    }
+                }
+            })
+        }
     }
 
     private fun showToastCheckNetwork() {
-        Toast.makeText(
-            context,
-            getString(R.string.check_network_connection),
-            Toast.LENGTH_SHORT
-        ).show()
+        context?.let {
+            Toast.makeText(
+                it,
+                getString(R.string.check_network_connection),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun setMoviesList(movies: Movies) {
@@ -80,25 +84,33 @@ class FavoritesFragment : Fragment() {
     private fun loadNewFavoriteMovies() {
         if (page != totalPages) {
             favoritesAdapter.needShowLoading()
-            mainActivity.apiService.getFavoriteMovieByAccountId(
-                mainActivity.account?.id!!, mainActivity.sessionId,
-                page++
-            ).enqueue(object : Callback<Movies> {
-                override fun onFailure(call: Call<Movies>, t: Throwable) {
-                    showToastCheckNetwork()
-                    swipeRefresh.isRefreshing = false
-                }
-
-                override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
-                    response.body()?.let {
-                        insertMoviesList(it)
-                    }
-                    swipeRefresh.isRefreshing = false
+            mainActivity.account?.id?.let {
+                mainActivity.apiService.getFavoriteMovieByAccountId(
+                    it, mainActivity.sessionId,
                     page++
-                }
-            })
+                ).enqueue(object : Callback<Movies> {
+                    override fun onFailure(call: Call<Movies>, t: Throwable) {
+                        showToastCheckNetwork()
+                        swipeRefresh?.let {
+                            it.isRefreshing = false
+                        }
+                    }
+
+                    override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
+                        response.body()?.let {
+                            insertMoviesList(it)
+                        }
+                        swipeRefresh?.let {
+                            it.isRefreshing = false
+                        }
+                        page++
+                    }
+                })
+            }
         } else {
-            swipeRefresh.isRefreshing = false
+            swipeRefresh?.let {
+                it.isRefreshing = false
+            }
         }
     }
 
