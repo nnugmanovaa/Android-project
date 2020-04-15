@@ -12,11 +12,25 @@ import com.example.kinoshop.api.Api
 import com.example.kinoshop.model.ActorCast
 import com.example.kinoshop.model.MovieDetail
 import kotlinx.android.synthetic.main.fragment_movie_detail.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.*
 
-class MovieDetailFragment : Fragment() {
+class MovieDetailFragment : Fragment(), CoroutineScope {
+
+    private val job = Job()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,12 +48,9 @@ class MovieDetailFragment : Fragment() {
         val api = Api()
         val apiService = api.serviceInitialize()
 
-        apiService.getMovie(movieId).enqueue(object : Callback<MovieDetail> {
-            override fun onFailure(call: Call<MovieDetail>, t: Throwable) {
-                showToastCheckNetwork()
-            }
-
-            override fun onResponse(call: Call<MovieDetail>, response: Response<MovieDetail>) {
+        launch{
+            val response = apiService.getMovieCoroutine(movieId)
+            if (response.isSuccessful){
                 val movie = response.body()
                 collapsingToolbar.title = movie?.title
                 context?.let {
@@ -49,23 +60,32 @@ class MovieDetailFragment : Fragment() {
                         .centerCrop()
                         .into(posterImage)
                 }
-
                 overviewContent.text = movie?.overview
                 val genres = movie?.genres?.map { it.name }
                 genreContent.text = genres?.joinToString(", ")
             }
-        })
-        apiService.getActorCastByMovie(movieId).enqueue(object : Callback<ActorCast> {
-            override fun onFailure(call: Call<ActorCast>, t: Throwable) {
-                showToastCheckNetwork()
-            }
 
-            override fun onResponse(call: Call<ActorCast>, response: Response<ActorCast>) {
+        }
+
+        launch{
+            val response = apiService.getActorCastByMovieCoroutine(movieId)
+            if (response.isSuccessful){
                 val actorCast = response.body()
                 val actors = actorCast?.cast?.map { it.name }
                 actorCastContent.text = actors?.joinToString(", ")
             }
-        })
+        }
+//        apiService.getActorCastByMovie(movieId).enqueue(object : Callback<ActorCast> {
+//            override fun onFailure(call: Call<ActorCast>, t: Throwable) {
+//                showToastCheckNetwork()
+//            }
+//
+//            override fun onResponse(call: Call<ActorCast>, response: Response<ActorCast>) {
+//                val actorCast = response.body()
+//                val actors = actorCast?.cast?.map { it.name }
+//                actorCastContent.text = actors?.joinToString(", ")
+//            }
+//        })
     }
 
     private fun showToastCheckNetwork() {
