@@ -7,18 +7,35 @@ import android.view.ViewGroup
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import com.example.kinoshop.*
+import com.example.kinoshop.api.Api
 import com.example.kinoshop.model.Account
-import com.example.kinoshop.model.AuthResponse
-import com.example.kinoshop.model.RequestToken
 import com.example.kinoshop.model.SessionToken
 import kotlinx.android.synthetic.main.account_layout.*
 import kotlinx.android.synthetic.main.fragment_profile.*
 import kotlinx.android.synthetic.main.sign_in_layout.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.coroutines.CoroutineContext
 
-class ProfileFragment : Fragment() {
+class ProfileFragment : Fragment(), CoroutineScope {
+
+    private val job = Job()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
+
+    val api = Api()
+    val apiService = api.serviceInitialize()
 
     private lateinit var mainActivity: MainActivity
 
@@ -47,71 +64,57 @@ class ProfileFragment : Fragment() {
     }
 
     private fun runAuthorization() {
-        mainActivity.apiService.getRequestToken().enqueue(object : Callback<RequestToken> {
-            override fun onFailure(call: Call<RequestToken>, t: Throwable) {
-                hideProgressBar()
-            }
 
-            override fun onResponse(call: Call<RequestToken>, response: Response<RequestToken>) {
+        launch{
+            val response = apiService.getRequestTokenCoroutine()
+            if (response.isSuccessful){
                 val requestToken = response.body()?.requestToken
                 requestToken?.let { auth(it) }
             }
-        })
+
+        }
     }
 
     private fun auth(reqToken: String) {
-        mainActivity.apiService.authorization(loginET.trimmedText, passwordET.trimmedText, reqToken)
-            .enqueue(object :
-                Callback<AuthResponse> {
-                override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                    showError()
-                    hideProgressBar()
-                }
 
-                override fun onResponse(
-                    call: Call<AuthResponse>,
-                    response: Response<AuthResponse>
-                ) {
-                    if (response.body() == null) {
+        launch{
+            val response = apiService.authorizationCoroutine(loginET.trimmedText, passwordET.trimmedText, reqToken)
+            if (response.isSuccessful){
+                if (response.body() == null) {
+                    showError()
+                }
+                val requestResponse = response.body()
+                requestResponse?.let {
+                    if (it.success) {
+                        createSession(reqToken)
+                    } else {
                         showError()
                     }
-                    val requestResponse = response.body()
-                    requestResponse?.let {
-                        if (it.success) {
-                            createSession(reqToken)
-                        } else {
-                            showError()
-                        }
-                    }
-                    hideProgressBar()
                 }
-            })
-    }
-
-    private fun createSession(reqToken: String) {
-        mainActivity.apiService.createSession(reqToken).enqueue(object : Callback<SessionToken> {
-            override fun onFailure(call: Call<SessionToken>, t: Throwable) {
-                showError()
                 hideProgressBar()
             }
 
-            override fun onResponse(call: Call<SessionToken>, response: Response<SessionToken>) {
+        }
+    }
+
+    private fun createSession(reqToken: String) {
+        launch{
+            val response = apiService.createSessionCoroutine(reqToken)
+            if (response.isSuccessful){
                 response.body()?.sessionId?.let {
                     getAccount(it)
                     mainActivity.sessionId = it
                 }
+
             }
-        })
+
+        }
     }
 
     private fun getAccount(sessionId: String) {
-        mainActivity.apiService.getAccount(sessionId).enqueue(object : Callback<Account> {
-            override fun onFailure(call: Call<Account>, t: Throwable) {
-                showError()
-                hideProgressBar()
-            }
-
-            override fun onResponse(call: Call<Account>, response: Response<Account>) {
+        launch{
+            val response = apiService.getAccountCoroutine(sessionId)
+            if (response.isSuccessful){
                 val responseAccount = response.body()
                 responseAccount?.let { account ->
                     mainActivity.account = Account(
@@ -126,8 +129,10 @@ class ProfileFragment : Fragment() {
                     accountFrame?.let { it.visibility = View.VISIBLE }
                 }
                 hideProgressBar()
+
             }
-        })
+
+        }
     }
 
     private fun hideProgressBar() {
