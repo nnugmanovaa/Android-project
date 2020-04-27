@@ -19,7 +19,13 @@
         android:id="@+id/navigationFavorites"
         android:name="com.example.kinoshop.ui.favorites.FavoritesFragment"
         android:label="@string/title_favorites"
-        tools:layout="@layout/fragment_favorites" />
+        tools:layout="@layout/fragment_favorites">
+
+        <action
+            android:id="@+id/action_click_to_movie"
+            app:destination="@id/favoriteDetail" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/navigationProfile"
@@ -31,6 +37,15 @@
         android:id="@+id/movieDetail"
         android:name="com.example.kinoshop.ui.movies.MovieDetailFragment"
         tools:layout="@layout/fragment_movie_detail">
+        <argument
+            android:name="movieId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/favoriteDetail"
+        android:name="com.example.kinoshop.ui.favorites.FavoritesDetailFragment"
+        tools:layout="@layout/fragment_favorite_detail">
         <argument
             android:name="movieId"
             app:argType="long" />

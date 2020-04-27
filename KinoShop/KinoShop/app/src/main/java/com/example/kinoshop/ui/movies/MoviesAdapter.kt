@@ -13,6 +13,7 @@ class MoviesAdapter(private val onLoadNewMovies: () -> Unit) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var listItems = mutableListOf<MovieDetail>()
+    private var needLoad = false
     private lateinit var onClickMovie: (MovieHolder) -> Unit
 
     private companion object {
@@ -43,13 +44,15 @@ class MoviesAdapter(private val onLoadNewMovies: () -> Unit) :
         }
     }
 
-    fun setMoviesList(moviesList: List<MovieDetail>) {
+    fun setMoviesList(moviesList: List<MovieDetail>?) {
         listItems = moviesList as MutableList<MovieDetail>
+        needLoad = false
         notifyDataSetChanged()
     }
 
     fun insertNewMovies(moviesList: List<MovieDetail>) {
         listItems.addAll(moviesList)
+        needLoad = false
         notifyItemRangeInserted(listItems.lastIndex, moviesList.size)
     }
 
@@ -60,11 +63,15 @@ class MoviesAdapter(private val onLoadNewMovies: () -> Unit) :
     fun getMovieIdByPosition(position: Int) = listItems[position].id
 
     override fun getItemViewType(position: Int): Int {
-        return if (position == listItems.size - 1) {
+        return if (position == listItems.size - 1 && needLoad) {
             LOAD
         } else {
             MOVIES
         }
+    }
+
+    fun needShowLoading() {
+        needLoad = true
     }
 
     private fun initListeners(holder: RecyclerView.ViewHolder) {

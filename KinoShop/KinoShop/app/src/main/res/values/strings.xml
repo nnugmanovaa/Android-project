@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">KinoShop</string>
-    <string name="title_movies">Movies</string>
+    <string name="title_movies">KinoShop</string>
     <string name="title_favorites">Favorites</string>
     <string name="title_profile">Profile</string>
     <string name="download_image_url">https://image.tmdb.org/t/p/w500</string>
@@ -8,4 +8,14 @@
     <string name="genre">Genre:</string>
     <string name="actor_cast">Actor cast:</string>
     <string name="check_network_connection">Check network connection</string>
+    <string name="auth_url">https://www.themoviedb.org/authenticate/</string>
+    <string name="input_username">Input username</string>
+    <string name="input_password">Input password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="check_auth_data">Check auth data</string>
+    <string name="req_auth">Required authorization</string>
+    <string name="movie_added_favorite">Movie  successfully added to favorites</string>
+    <string name="movie_remove_favorite">Movie removed from favorites</string>
+    <string name="production_countries">Production countries:</string>
+    <string name="newest">Новинки</string>
 </resources>
