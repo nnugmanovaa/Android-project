@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.kinoshop.ui.movies.MoviesFragment
 
-@Database(entities = [MovieDetail::class], version = 1)
+@Database(entities = [MovieDetail::class], version = 3)
 abstract class MovieDetailDatabase : RoomDatabase() {
 
     abstract fun movieDetailDao(): MovieDetailDao
@@ -20,7 +20,7 @@ abstract class MovieDetailDatabase : RoomDatabase() {
                     context.applicationContext,
                     MovieDetailDatabase::class.java,
                     "app_database.db"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
             }
             return INSTANCE!!
         }

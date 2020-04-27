@@ -66,24 +66,26 @@ class MovieDetailFragment : Fragment(), CoroutineScope {
         val apiService = api.serviceInitialize()
 
 
-        movieDetailDao = MovieDetailDatabase.getDatabase(context = activity as Context).movieDetailDao()
-        launch{
-            val list = withContext(Dispatchers.IO){
-                try{
+        movieDetailDao =
+            MovieDetailDatabase.getDatabase(context = activity as Context).movieDetailDao()
+        launch {
+            val list = withContext(Dispatchers.IO) {
+                try {
                     val response = apiService.getMovieCoroutine(movieId)
-                    if(response.isSuccessful){
+                    if (response.isSuccessful) {
                         val result = response.body()
-                        if (result!=null){
+                        if (result != null) {
 
                         }
                         result
-                    }
-                    else{
+                    } else {
                         movieDetailDao?.getMovieById(movieId)
                     }
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     movieDetailDao?.getMovieById(movieId)
                 }
+
+                movieDetailDao?.getMovieById(movieId)
             }
             collapsingToolbar.title = list?.title
             context?.let {
@@ -95,8 +97,6 @@ class MovieDetailFragment : Fragment(), CoroutineScope {
             }
             overviewContent.text = list?.overview
         }
-
-
 
 
 //////
@@ -117,61 +117,76 @@ class MovieDetailFragment : Fragment(), CoroutineScope {
 ////                genreContent.text = genres?.joinToString(", ")
 //            }
 //
-//        }
 
-        launch{
-            val response = apiService.getActorCastByMovieCoroutine(movieId)
-            if (response.isSuccessful){
-                val actorCast = response.body()
-                val actors = actorCast?.cast?.map { it.name }
-                actorCastContent.text = actors?.joinToString(", ")
+
+
+        launch {
+            val list = withContext(Dispatchers.IO) {
+                try {
+                    val response = apiService.getActorCastByMovieCoroutine(movieId)
+                    if (response.isSuccessful) {
+                        val result = response.body()
+                        result
+                        val actorCast = response.body()
+                        val actors = actorCast?.cast?.map { it.name }
+                        actorCastContent.text = actors?.joinToString(", ")
+                    } else {
+                        movieDetailDao?.getMovieById(movieId)
+                    }
+                } catch (e: Exception) {
+                    movieDetailDao?.getMovieById(movieId)
+                }
+
+
             }
         }
-    }
+        }
 
-    private fun markFavoriteMedia() {
-        val api = Api()
-        val apiService = api.serviceInitialize()
-        mainActivity.account?.id?.let {
-            launch{
-                val response = apiService.markFavoriteMovieCoroutine(
-                    accountId = it,
-                    sessionId = mainActivity.sessionId,
-                    mediaType = "movie",
-                    mediaId = movieId,
-                    favorite = true
-                )
-                if (response.isSuccessful){
-                    if (response.body() != null) {
-                        context?.let {
-                            Toast.makeText(
-                                it,
-                                getString(R.string.movie_added_favorite),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
 
-                    } else {
-                        context?.let {
-                            Toast.makeText(
-                                it,
-                                getString(R.string.check_auth_data),
-                                Toast.LENGTH_SHORT
-                            ).show()
+
+        private fun markFavoriteMedia() {
+            val api = Api()
+            val apiService = api.serviceInitialize()
+            mainActivity.account?.id?.let {
+                launch {
+                    val response = apiService.markFavoriteMovieCoroutine(
+                        accountId = it,
+                        sessionId = mainActivity.sessionId,
+                        mediaType = "movie",
+                        mediaId = movieId,
+                        favorite = true
+                    )
+                    if (response.isSuccessful) {
+                        if (response.body() != null) {
+                            context?.let {
+                                Toast.makeText(
+                                    it,
+                                    getString(R.string.movie_added_favorite),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                        } else {
+                            context?.let {
+                                Toast.makeText(
+                                    it,
+                                    getString(R.string.check_auth_data),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
                 }
             }
         }
-    }
 
-    private fun showToastCheckNetwork() {
-        context?.let {
-            Toast.makeText(
-                it,
-                getString(R.string.check_network_connection),
-                Toast.LENGTH_SHORT
-            ).show()
+        private fun showToastCheckNetwork() {
+            context?.let {
+                Toast.makeText(
+                    it,
+                    getString(R.string.check_network_connection),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
-    }
 }
