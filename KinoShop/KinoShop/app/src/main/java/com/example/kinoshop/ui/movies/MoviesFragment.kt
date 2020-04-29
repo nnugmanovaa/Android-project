@@ -1,6 +1,8 @@
 package com.example.kinoshop.ui.movies
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,19 +12,35 @@ import androidx.navigation.findNavController
 import com.example.kinoshop.R
 import com.example.kinoshop.api.Api
 import com.example.kinoshop.api.ApiService
+import com.example.kinoshop.model.MovieDetail
+import com.example.kinoshop.model.MovieDetailDao
+import com.example.kinoshop.model.MovieDetailDatabase
 import com.example.kinoshop.model.Movies
 import kotlinx.android.synthetic.main.fragment_movies.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.*
+import java.lang.Exception
 
-class MoviesFragment : Fragment() {
+class MoviesFragment : Fragment(), CoroutineScope {
 
     private lateinit var moviesAdapter: MoviesAdapter
     private lateinit var apiService: ApiService
     private var page = 1
     private var totalPages = 0
 
+    private val job = Job()
+
+    private var movieDetailDao: MovieDetailDao? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -34,26 +52,56 @@ class MoviesFragment : Fragment() {
         val api = Api()
         apiService = api.serviceInitialize()
         initMoviesFeed()
-        getMovies()
+
+        movieDetailDao = MovieDetailDatabase.getDatabase(context = requireActivity()).movieDetailDao()
+        getMoviesList()
         swipeRefresh.setOnRefreshListener {
+            getMoviesList()
             loadNewMovies()
+
+        }
+
+
+
+
+    }
+
+
+    fun getMoviesList(){
+        launch{
+            val list = withContext(Dispatchers.IO){
+
+                try{
+                    val response = apiService.getMoviesCoroutine(page)
+                    if(response.isSuccessful){
+                        val result = response.body()?.getResults()
+                        Log.d("asd", movieDetailDao?.getAll().toString())
+                        if (!result.isNullOrEmpty()){
+                            movieDetailDao?.deleteAll()
+                            movieDetailDao?.insertAll(result)
+                        }
+                        result
+                    }
+                    else{
+                        movieDetailDao?.getAll()?: emptyList()
+                    }
+                } catch (e: Exception){
+                    movieDetailDao?.getAll()?: emptyList()
+                }
+            }
+            moviesAdapter.setMoviesList(list)
+            moviesAdapter.notifyDataSetChanged()
+//            val response = apiService.getMoviesCoroutine(page)
+//            if (response.isSuccessful){
+//                response.body()?.let {
+//                    totalPages = it.totalPages
+//                    setMoviesList(it)
+//                }
+//            }
         }
     }
 
-    private fun getMovies() {
-        apiService.getMovies(page).enqueue(object : Callback<Movies> {
-            override fun onFailure(call: Call<Movies>, t: Throwable) {
-                showToastCheckNetwork()
-            }
 
-            override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
-                response.body()?.let {
-                    totalPages = it.totalPages
-                    setMoviesList(it)
-                }
-            }
-        })
-    }
 
     private fun showToastCheckNetwork() {
         Toast.makeText(
@@ -64,29 +112,30 @@ class MoviesFragment : Fragment() {
     }
 
     private fun setMoviesList(movies: Movies) {
-        moviesAdapter.setMoviesList(movies.results)
+        moviesAdapter.setMoviesList(movies.getResults())
     }
 
     private fun insertMoviesList(movies: Movies) {
-        moviesAdapter.insertNewMovies(movies.results)
+        moviesAdapter.insertNewMovies(movies.getResults())
     }
 
     private fun loadNewMovies() {
         if (page != totalPages)
-            apiService.getMovies(page).enqueue(object : Callback<Movies> {
-                override fun onFailure(call: Call<Movies>, t: Throwable) {
-                    showToastCheckNetwork()
-                    swipeRefresh.isRefreshing = false
+            launch{
+                try {
+                    val response = apiService.getMoviesCoroutine(page)
+                    if (response.isSuccessful){
+                        response.body()?.let {
+                            insertMoviesList(it)
+                        }
+                        swipeRefresh.isRefreshing = false
+                        page++
+                    }
+                }catch (e: Exception){
+
                 }
 
-                override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
-                    response.body()?.let {
-                        insertMoviesList(it)
-                    }
-                    swipeRefresh.isRefreshing = false
-                    page++
-                }
-            })
+            }
     }
 
     private fun initMoviesFeed() {
