@@ -9,14 +9,30 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import com.example.kinoshop.MainActivity
 import com.example.kinoshop.R
+import com.example.kinoshop.api.Api
 import com.example.kinoshop.model.Movies
 import com.example.kinoshop.ui.movies.MoviesAdapter
 import kotlinx.android.synthetic.main.fragment_movies.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.coroutines.CoroutineContext
 
-class FavoritesFragment : Fragment() {
+class FavoritesFragment : Fragment(), CoroutineScope {
+
+    private val job = Job()
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
 
     private lateinit var favoritesAdapter: MoviesAdapter
     private lateinit var mainActivity: MainActivity
@@ -45,21 +61,18 @@ class FavoritesFragment : Fragment() {
 
     private fun getFavorite() {
         mainActivity.account?.id?.let {
-            mainActivity.apiService.getFavoriteMovieByAccountId(
-                it, mainActivity.sessionId,
-                page
-            ).enqueue(object : Callback<Movies> {
-                override fun onFailure(call: Call<Movies>, t: Throwable) {
-                    showToastCheckNetwork()
-                }
-
-                override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
+            val api = Api()
+            val apiService = api.serviceInitialize()
+            launch{
+                val response = apiService.getFavoriteMovieByAccountIdCoroutine(it, mainActivity.sessionId,
+                    page)
+                if (response.isSuccessful){
                     response.body()?.let {
                         totalPages = it.totalPages
                         setMoviesList(it)
                     }
                 }
-            })
+            }
         }
     }
 
@@ -74,29 +87,24 @@ class FavoritesFragment : Fragment() {
     }
 
     private fun setMoviesList(movies: Movies) {
-        favoritesAdapter.setMoviesList(movies.results)
+        favoritesAdapter.setMoviesList(movies.getResults())
     }
 
     private fun insertMoviesList(movies: Movies) {
-        favoritesAdapter.insertNewMovies(movies.results)
+        favoritesAdapter.insertNewMovies(movies.getResults())
     }
 
     private fun loadNewFavoriteMovies() {
         if (page != totalPages) {
             favoritesAdapter.needShowLoading()
             mainActivity.account?.id?.let {
-                mainActivity.apiService.getFavoriteMovieByAccountId(
-                    it, mainActivity.sessionId,
-                    page++
-                ).enqueue(object : Callback<Movies> {
-                    override fun onFailure(call: Call<Movies>, t: Throwable) {
-                        showToastCheckNetwork()
-                        swipeRefresh?.let {
-                            it.isRefreshing = false
-                        }
-                    }
 
-                    override fun onResponse(call: Call<Movies>, response: Response<Movies>) {
+                val api = Api()
+                val apiService = api.serviceInitialize()
+                launch{
+                    val response = apiService.getFavoriteMovieByAccountIdCoroutine(it, mainActivity.sessionId,
+                        page++)
+                    if (response.isSuccessful){
                         response.body()?.let {
                             insertMoviesList(it)
                         }
@@ -105,7 +113,7 @@ class FavoritesFragment : Fragment() {
                         }
                         page++
                     }
-                })
+                }
             }
         } else {
             swipeRefresh?.let {

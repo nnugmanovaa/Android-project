@@ -44,7 +44,7 @@ class MoviesAdapter(private val onLoadNewMovies: () -> Unit) :
         }
     }
 
-    fun setMoviesList(moviesList: List<MovieDetail>) {
+    fun setMoviesList(moviesList: List<MovieDetail>?) {
         listItems = moviesList as MutableList<MovieDetail>
         needLoad = false
         notifyDataSetChanged()
